@@ -1,6 +1,6 @@
 # Makefile
 
-_DMAKE_VERS := 2.14
+_DMAKE_VERS := 2.16
 _DMAKE_FILE := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
 _DMAKE_DIR   = $(dir $(_DMAKE_FILE))
 
@@ -155,7 +155,7 @@ export APTLY_CONFIG
 
 define DEBIAN_CONTROL
 Package: $(DEBPKGNAME)
-Version: $(NEXT_VERION)
+Version: $(DEBPKGVERS)
 Section: utils
 Priority: optional
 Architecture: $(DEBPKGARCH)
@@ -280,10 +280,12 @@ src/DEBIAN/control:
 control: src/DEBIAN/control
 .PHONY: src/DEBIAN/control
 
-Makefile:
+makefile:
 	[ -r Makefile ] || echo "$$MAKEFILE_TEMPLATE" >Makefile
-makefile: Makefile
-.PHONY: Makefile
+.PHONY: makefile
+
+init: makefile control
+.PHONY: init
 
 do-update-debian-control-version:
 	@[ -z "$(V)" -a "$(DEBPKGVERS)" = "$(NEXTPKGVERS)" ] || \
@@ -309,6 +311,7 @@ repo-list: $(APTLY_CONF)
 repo-show: repo-list
 
 $(DEBPKGFILE):
+	SOURCE_DATE_EPOCH=$$(stat -c %Y src/DEBIAN/control) \
 	dpkg-deb --root-owner-group --build src $(DEBPKGFILE)
 .PHONY: $(DEBPKGFILE)
 ifneq ($(DEBPKGFILE), $(NEXTDEBFILE))
@@ -342,7 +345,7 @@ apt-update: /etc/apt/sources.list.d/$(SOURCES_FILE)
 	               -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
 
 apt-install:
-	apt-get install -y $(DEBPKGNAME)
+	apt-get install --reinstall -y $(DEBPKGNAME)
 
 local-install: $(DEBPKGFILE)
 	dpkg -i $(DEBPKGFILE)
