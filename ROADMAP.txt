@@ -1,4 +1,4 @@
-* Create a man page
+* Create a man page, see http://manpages.bsd.lv/mdoc.html
 * Move usage to man page and use man or nroff to print it
 * Document config file and inferred config variables
 * Document set-version target
