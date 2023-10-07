@@ -1,0 +1,6 @@
+* Create a man page
+* Move usage to man page and use man or nroff to print it
+* Document config file and inferred config variables
+* Document set-version target
+* Add commands to change package attributes (Name, Prio etc)
+

@@ -21,12 +21,18 @@ RELEASE_default := $(awk -F= '/^VERSION_CODENAME=/ {print $2}' /etc/os-release)
 DISTRO_default  := $(awk -F= '/^ID=/ {print $2}' /etc/os-release)
 $(if $(DISTRO_default),,          $(eval DISTRO_default:=debian))
 $(if $(RELEASE_default),,         $(eval RELEASE_default:=bullseye))
+ifneq ($(wildcard /usr/bin/git),)
+$(if $(MAINTAINER_USER_default),, $(eval MAINTAINER_USER_default:=$(shell id -nu)))
+$(if $(MAINTAINER_NAME_default),, $(eval MAINTAINER_NAME_default:=$(shell git config --get user.name)))
+$(if $(MAINTAINER_MAIL_default),, $(eval MAINTAINER_MAIL_default:=$(shell git config --get user.email)))
+endif
 $(if $(MAINTAINER_USER_default),, $(eval MAINTAINER_USER_default:=$(shell id -nu)))
 $(if $(MAINTAINER_NAME_default),, $(eval MAINTAINER_NAME_default:=$(shell getent passwd $(MAINTAINER_USER_default) | awk -F: '{print $$5}' | awk -F, '{print $$1}')))
 $(if $(MAINTAINER_MAIL_default),, $(eval MAINTAINER_MAIL_default:=$(MAINTAINER_USER_default)@localhost))
-$(if $(UPLOADER_USER_default),,   $(eval UPLOADER_USER_default:=$(shell id -nu)))
-$(if $(UPLOADER_NAME_default),,   $(eval UPLOADER_NAME_default:=$(shell getent passwd $(UPLOADER_USER_default) | awk -F: '{print $$5}' | awk -F, '{print $$1}')))
-$(if $(UPLOADER_MAIL_default),,   $(eval UPLOADER_MAIL_default:=$(UPLOADER_USER_default)@localhost))
+
+$(if $(UPLOADER_USER_default),,   $(eval UPLOADER_USER_default:=$(MAINTAINER_USER_default)))
+$(if $(UPLOADER_NAME_default),,   $(eval UPLOADER_NAME_default:=$(MAINTAINER_NAME_default)))
+$(if $(UPLOADER_MAIL_default),,   $(eval UPLOADER_MAIL_default:=$(MAINTAINER_MAIL_default)))
 
 $(if $(DISTRO),,          $(eval DISTRO:=$(DISTRO_default)))
 $(if $(RELEASE),,         $(eval RELEASE:=$(RELEASE_default)))
@@ -101,7 +107,12 @@ REPOPKGVERS  :=
 VERSION      := 
 NEXTPKGVERS  := $(V)
 NEXT_VERSION := $(V)
+T_DEBPKGVERS := $(V)
 endif
+$(eval T_DEBPKGNAME:=$(if $(N),$(N),$(DEBPKGNAME)))
+$(eval T_SECTION:=$(if $(S),$(S),utils))
+$(eval T_PRIORITIY:=$(if $(P),$(P),optional))
+$(eval T_DEBPKGARCH:=$(if $(A),$(A),all))
 
 NEEDS_UPDATE := $(shell if dpkg --compare-versions "$(REPOPKGVERS)" lt "$(DEBPKGVERS)" ; then echo needed ; else echo no-need ; fi)
 
@@ -154,13 +165,13 @@ endef
 export APTLY_CONFIG
 
 define DEBIAN_CONTROL
-Package: $(DEBPKGNAME)
-Version: $(DEBPKGVERS)
-Section: utils
-Priority: optional
-Architecture: $(DEBPKGARCH)
+Package: $(T_DEBPKGNAME)
+Version: $(T_DEBPKGVERS)
+Section: $(T_SECTION)
+Priority: $(T_PRIORITIY)
+Architecture: $(T_DEBPKGARCH)
 Maintainer: $(MAINTAINER_NAME) <$(MAINTAINER_MAIL)>
-Description: $(DEBPKGNAME)
+Description: $(T_DEBPKGNAME) package.
 
 endef
 export DEBIAN_CONTROL
@@ -171,8 +182,8 @@ endef
 export SOURCES_LIST
 
 define MAKEFILE_TEMPLATE
-VERSION_SCRIPT   = /usr/local/bin/my_script
-VERSION_VARIABLE = MY_SCRIPT_VERSION
+# VERSION_SCRIPT   = /usr/local/bin/$(call lc,$(T_DEBPKGNAME))
+# VERSION_VARIABLE = $(call uc,$(T_DEBPKGNAME))_VERSION
 include /usr/local/lib/dmakelib.mk
 endef
 export MAKEFILE_TEMPLATE
@@ -186,7 +197,9 @@ Usage: make TARGET
 
 TARGET is one of:
 
-   init                   Initialize package boiler-plate (makefile+control)
+   init [{N,V,A,P,S}=.. ] Initialize package boiler-plate (makefile+control)
+                          with optional values for Name, Version, Architecture,
+                          Priority and Section
    build                  Build $(DEBPKGFILE)
    upload                 Upload $(DEBPKGFILE)
    next-version [V=<ver>] Increment Version in DEBIAN/control automatically
