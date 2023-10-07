@@ -1,0 +1,5 @@
+SHARE_MOUNT   := /var/cache/dmake
+SHARE_NAME    := hardcoded
+DISTRO_DIR    := /var/cache/dmake/debian
+APTLY_DIR     := /var/cache/dmake/aptly
+
