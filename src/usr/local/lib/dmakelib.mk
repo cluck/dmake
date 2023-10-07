@@ -186,6 +186,7 @@ Usage: make TARGET
 
 TARGET is one of:
 
+   init                   Initialize package boiler-plate (makefile+control)
    build                  Build $(DEBPKGFILE)
    upload                 Upload $(DEBPKGFILE)
    next-version [V=<ver>] Increment Version in DEBIAN/control automatically

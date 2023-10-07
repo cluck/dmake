@@ -6,6 +6,7 @@ Usage: make TARGET
 
 TARGET is one of:
 
+   init                   Initialize package boiler-plate (makefile+control)
    build                  Build dmakelib_2.16_all.deb
    upload                 Upload dmakelib_2.16_all.deb
    next-version [V=<ver>] Increment Version in DEBIAN/control automatically
